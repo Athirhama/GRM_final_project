@@ -7,8 +7,8 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
-from data3 import ShapeNetPart
-from model2 import DGCNN_PartSeg
+from data import ShapeNetPart
+from model import DGCNN_PartSeg
 
 
 # INPUT VARIABLES

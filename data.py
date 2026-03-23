@@ -16,7 +16,7 @@ class ShapeNetPart(Dataset):
     def __init__(self, num_points=1024, partition='train'):
         self.num_points = num_points
         self.partition = partition
-        self.root = '/content/data_bin' 
+        self.root = './data/bin'
         
         self.datapath = []
         self.cat_to_id = {}

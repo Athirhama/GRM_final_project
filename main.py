@@ -100,7 +100,7 @@ if __name__ == "__main__":
             loss, inst_m, cl_m, cat_dict = run_model(model, test_loader, criterion, device, cls_to_label, categories)
             print(f"\nFINAL EVAL | Instance mIoU: {inst_m:.4f} | Class mIoU: {cl_m:.4f}")
         else:
-            print("Checkpoint introuvable.")
+            print("Checkpoint not found.")
     else:
         optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=1e-4)
         scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=0.001) 
