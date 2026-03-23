@@ -83,9 +83,9 @@ if __name__ == "__main__":
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     train_dataset = ShapeNetPart(args.num_points, 'train')
+    cls_to_label = train_dataset.get_seg_mapping() 
     test_dataset = ShapeNetPart(args.num_points, 'test')
-    cls_to_label = train_dataset.get_seg_mapping()
-    categories = train_dataset.categories
+    test_dataset.categories = train_dataset.categories
 
     model = DGCNN_PartSeg(k=args.k).to(device)
     if torch.cuda.device_count() > 1:
@@ -97,10 +97,10 @@ if __name__ == "__main__":
         if os.path.exists(args.model_path):
             model.load_state_dict(torch.load(args.model_path, map_location=device))
             test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
-            loss, inst_m, cl_m, cat_dict = run_model(model, test_loader, criterion, device, cls_to_label, categories)
+            loss, inst_m, cl_m, cat_dict = run_model(model, test_loader, criterion, device, cls_to_label, train_dataset.categories)
             print(f"\nFINAL EVAL | Instance mIoU: {inst_m:.4f} | Class mIoU: {cl_m:.4f}")
         else:
-            print("Checkpoint not found.")
+            print("Checkpoint introuvable.")
     else:
         optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=1e-4)
         scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=0.001) 
@@ -110,11 +110,11 @@ if __name__ == "__main__":
         best_miou = 0.0
         for epoch in range(args.epochs):
             # training
-            tr_loss, tr_inst, tr_cl, _ = run_model(model, train_loader, criterion, device, cls_to_label, categories, optimizer)
+            tr_loss, tr_inst, tr_cl, _ = run_model(model, train_loader, criterion, device, cls_to_label, train_dataset.categories, optimizer)
             scheduler.step()
             
             # test
-            te_loss, te_inst, te_cl, te_cats = run_model(model, test_loader, criterion, device, cls_to_label, categories)
+            te_loss, te_inst, te_cl, te_cats = run_model(model, test_loader, criterion, device, cls_to_label, test_dataset.categories)
             
             if te_inst > best_miou:
                 best_miou = te_inst
