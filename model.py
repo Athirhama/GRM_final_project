@@ -28,7 +28,7 @@ class DGCNN_PartSeg(nn.Module):
             nn.LeakyReLU(0.2)
         )
         
-        # The 3rd EdgeConv is indeed an MLP(64) in the paper
+
         self.conv3 = nn.Sequential(
             nn.Conv2d(64*2, 64, kernel_size=1, bias=False),
             nn.BatchNorm2d(64),
