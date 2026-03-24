@@ -66,7 +66,6 @@ Note: Due to file size constraints, the full set of generated images is not incl
 For the teacher to see our training logs, those are stored in the `logs/` directory. These files contain the loss values, Instance mIoU, and Class mIoU recorded during the original training process.
 
 ---
----
 
 ## Note for the teachers
 
