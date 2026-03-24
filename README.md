@@ -43,8 +43,9 @@ This script converts the raw `.pts` and `.seg` files into `.npy` format and orga
 ### Training from Scratch
 
 To start a new training session:
-
-python main.py 
+```bash
+python main.py
+```
 
 ---
 
