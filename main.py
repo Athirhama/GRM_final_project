@@ -70,11 +70,10 @@ def run_model(model, loader, criterion, device, cls_to_label, categories, optimi
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='DGCNN Part Segmentation')
     parser.add_argument('--batch_size', type=int, default=32)
-    parser.add_argument('--epochs', type=int, default=200)
+    parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--lr', type=float, default=0.1)
     parser.add_argument('--num_points', type=int, default=2048)
     parser.add_argument('--k', type=int, default=20)
-    parser.add_argument('--eval', action='store_true')
     parser.add_argument('--model_path', type=str, default='checkpoints/best_model.pth')
     args = parser.parse_args()
 
@@ -83,9 +82,9 @@ if __name__ == "__main__":
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     train_dataset = ShapeNetPart(args.num_points, 'train')
-    cls_to_label = train_dataset.get_seg_mapping() 
     test_dataset = ShapeNetPart(args.num_points, 'test')
-    test_dataset.categories = train_dataset.categories
+    cls_to_label = train_dataset.get_seg_mapping()
+    categories = train_dataset.categories
 
     model = DGCNN_PartSeg(k=args.k).to(device)
     if torch.cuda.device_count() > 1:
@@ -93,40 +92,32 @@ if __name__ == "__main__":
 
     criterion = nn.CrossEntropyLoss()
 
-    if args.eval:
-        if os.path.exists(args.model_path):
-            model.load_state_dict(torch.load(args.model_path, map_location=device))
-            test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
-            loss, inst_m, cl_m, cat_dict = run_model(model, test_loader, criterion, device, cls_to_label, train_dataset.categories)
-            print(f"\nFINAL EVAL | Instance mIoU: {inst_m:.4f} | Class mIoU: {cl_m:.4f}")
-        else:
-            print("Checkpoint introuvable.")
-    else:
-        optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=1e-4)
-        scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=0.001) 
-        train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=2)
-        test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=2)
+    
+    optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=1e-4)
+    scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=0.001) 
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=2)
+    test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=2)
 
-        best_miou = 0.0
-        for epoch in range(args.epochs):
-            # training
-            tr_loss, tr_inst, tr_cl, _ = run_model(model, train_loader, criterion, device, cls_to_label, train_dataset.categories, optimizer)
-            scheduler.step()
-            
-            # test
-            te_loss, te_inst, te_cl, te_cats = run_model(model, test_loader, criterion, device, cls_to_label, test_dataset.categories)
-            
-            if te_inst > best_miou:
-                best_miou = te_inst
-                state = model.module.state_dict() if isinstance(model, nn.DataParallel) else model.state_dict()
-                torch.save(state, 'checkpoints/best_model.pth')
-            
-            
-            print(f"\n{'='*20} EPOCH {epoch+1:03d} {'='*20}")
-            print(f"TRAIN | Loss: {tr_loss:.4f} | Inst mIoU: {tr_inst:.4f} | Class mIoU: {tr_cl:.4f}")
-            print(f"TEST  | Loss: {te_loss:.4f} | Inst mIoU: {te_inst:.4f} | Class mIoU: {te_cl:.4f}")
-            print(f"{'-'*50}")
-            print(f"{'Test per category':<25} | {'mIoU':<10}")
-            for cat_name, val in te_cats.items():
-                print(f"{cat_name:<25} | {val:.4f}")
-            print(f"{'='*50}\n")
+    best_miou = 0.0
+    for epoch in range(args.epochs):
+        # training
+        tr_loss, tr_inst, tr_cl, _ = run_model(model, train_loader, criterion, device, cls_to_label, categories, optimizer)
+        scheduler.step()
+        
+        # test
+        te_loss, te_inst, te_cl, te_cats = run_model(model, test_loader, criterion, device, cls_to_label, categories)
+        
+        if te_inst > best_miou:
+            best_miou = te_inst
+            state = model.module.state_dict() if isinstance(model, nn.DataParallel) else model.state_dict()
+            torch.save(state, 'checkpoints/best_model.pth')
+        
+        
+        print(f"\n{'='*20} EPOCH {epoch+1:03d} {'='*20}")
+        print(f"TRAIN | Loss: {tr_loss:.4f} | Inst mIoU: {tr_inst:.4f} | Class mIoU: {tr_cl:.4f}")
+        print(f"TEST  | Loss: {te_loss:.4f} | Inst mIoU: {te_inst:.4f} | Class mIoU: {te_cl:.4f}")
+        print(f"{'-'*50}")
+        print(f"{'Test per category':<25} | {'mIoU':<10}")
+        for cat_name, val in te_cats.items():
+            print(f"{cat_name:<25} | {val:.4f}")
+        print(f"{'='*50}\n")
