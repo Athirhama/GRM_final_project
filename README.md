@@ -73,9 +73,3 @@ For the teacher to see our training logs, those are stored in the `logs/` direct
 The default parameters (learning rate, scheduler details, k-neighbors, etc.) and a comprehensive analysis of the training process are documented in the **final project report**. 
 
 The report also includes a detailed qualitative evaluation with 3D visualizations from `vision.py` that demonstrate the model's performance on the test set.
-
-## Note for the Teacher
-
-The default parameters (learning rate, scheduler details, k-neighbors, etc.) and a comprehensive analysis of the training process are documented in the **final project report**. 
-
-The report also includes a detailed qualitative evaluation with 3D visualizations from `vision.py` that demonstrate the model's performance on the test set.
